@@ -1,0 +1,94 @@
+-- Place this LocalScript in StarterPlayerScripts for persistent local ESP
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local localPlayer = Players.LocalPlayer
+
+local function createESP(player)
+    if player == localPlayer then return end
+
+    -- Wait for character
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    -- Create BillboardGui for BIG display name
+    local function createNameTag()
+        local head = character:WaitForChild("Head", 5)
+        if not head then return end
+
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "ESPNameTag"
+        billboard.Adornee = head
+        billboard.Size = UDim2.new(0, 300, 0, 70)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = head
+
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = player.DisplayName
+        textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+        textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+        textLabel.TextStrokeTransparency = 0
+        textLabel.Font = Enum.Font.ArialBold
+        textLabel.TextScaled = true
+        textLabel.Parent = billboard
+    end
+
+    -- Create red hitboxes by adding a transparent red box over each part
+    local function createHitboxes()
+        local function addBox(part)
+            if part:IsA("BasePart") and not part:FindFirstChild("ESPBox") then
+                local box = Instance.new("BoxHandleAdornment")
+                box.Name = "ESPBox"
+                box.Adornee = part
+                box.AlwaysOnTop = true
+                box.ZIndex = 10
+                box.Transparency = 0.5
+                box.Color3 = Color3.new(1, 0, 0) -- red
+                box.Size = part.Size
+                box.Parent = part
+            end
+        end
+
+        for _, part in pairs(character:GetChildren()) do
+            addBox(part)
+        end
+
+        -- Connect to new parts added (e.g. accessories)
+        character.ChildAdded:Connect(function(child)
+            addBox(child)
+        end)
+    end
+
+    -- Remove old ESP first if any
+    if character:FindFirstChild("Head") then
+        local oldESP = character.Head:FindFirstChild("ESPNameTag")
+        if oldESP then oldESP:Destroy() end
+    end
+
+    for _, part in pairs(character:GetChildren()) do
+        local box = part:FindFirstChild("ESPBox")
+        if box then box:Destroy() end
+    end
+
+    createNameTag()
+    createHitboxes()
+end
+
+-- Apply ESP to all current players
+for _, player in pairs(Players:GetPlayers()) do
+    createESP(player)
+    -- Update ESP on character respawn
+    player.CharacterAdded:Connect(function()
+        createESP(player)
+    end)
+end
+
+-- Apply ESP to new players joining
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        createESP(player)
+    end)
+end)
