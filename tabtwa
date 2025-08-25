@@ -92,3 +92,29 @@ Players.PlayerAdded:Connect(function(player)
         createESP(player)
     end)
 end)
+
+-- 🌀 Infinite Jump (Always On, Respawn Safe)
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local lp = Players.LocalPlayer
+
+_G.infiniteJump = true -- always enabled
+
+local function bindInfiniteJump(char)
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    UIS.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        if input.KeyCode == Enum.KeyCode.Space and _G.infiniteJump then
+            local human = char:FindFirstChildOfClass("Humanoid")
+            if human and human:GetState() == Enum.HumanoidStateType.Freefall then
+                hrp.Velocity = Vector3.new(hrp.Velocity.X, 50, hrp.Velocity.Z)
+            end
+        end
+    end)
+end
+
+-- Run immediately + on respawn
+if lp.Character then bindInfiniteJump(lp.Character) end
+lp.CharacterAdded:Connect(bindInfiniteJump)
